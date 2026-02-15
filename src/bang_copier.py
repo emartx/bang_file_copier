@@ -41,8 +41,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--config",
-        default="./bang_copier_config.json",
-        help="Path to JSON config file (default: ./bang_copier_config.json)",
+        default=str(Path.home() / ".config" / "bang-copier" / "config.json"),
+        help="Path to JSON config file (default: ~/.config/bang-copier/config.json)",
     )
 
     parser.add_argument(
