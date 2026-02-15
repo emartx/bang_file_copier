@@ -1,0 +1,9 @@
+{
+  "destinations": [
+    "./dest1",
+    "./dest2"
+  ],
+  "log_dir": "./logs",
+  "remove_bang_prefix": true,
+  "scan_recursively": false
+}
