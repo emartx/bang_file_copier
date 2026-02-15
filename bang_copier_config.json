@@ -1,9 +1,9 @@
 {
   "destinations": [
-    "./dest1",
-    "./dest2"
+    "~/Downloads/dest1",
+    "~/Downloads/dest2"
   ],
-  "log_dir": "./logs",
+  "log_dir": "~/bang-copier-logs",
   "remove_bang_prefix": true,
   "scan_recursively": false
 }
