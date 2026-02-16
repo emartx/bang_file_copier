@@ -15,6 +15,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+import re
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -153,6 +154,27 @@ def main(argv: list[str] | None = None) -> int:
     print("  source:", source_path)
     print("  config:", config_path)
     print("  dry_run:", bool(args.dry_run))
+
+    # Step 4: Scan for eligible files (top-level only)
+    # Match exactly 1..3 leading '!' followed by a non-'!' character
+    pattern = re.compile(r'^(?:!{1,3})[^!].*')
+    matched_files: list[Path] = []
+    for item in source_path.iterdir():
+        if not item.is_file():
+            continue
+        if pattern.match(item.name):
+            matched_files.append(item)
+
+    if not matched_files:
+        print("No eligible '!' files found. Exiting.")
+        return 0
+
+    print(f"Found {len(matched_files)} eligible file(s):")
+    for p in matched_files:
+        print(f"  - {p.name}")
+
+    # For now stop here; subsequent steps will compute dest names and copy.
+    return 0
 
 
 if __name__ == "__main__":
