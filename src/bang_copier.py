@@ -173,7 +173,23 @@ def main(argv: list[str] | None = None) -> int:
     for p in matched_files:
         print(f"  - {p.name}")
 
-    # For now stop here; subsequent steps will compute dest names and copy.
+    # Step 5: Compute destination filenames (remove 1..3 leading '!')
+    source_folder_name = source_path.name
+    rename_map: list[dict] = []
+    for src in matched_files:
+        clean_basename = re.sub(r'^!{1,3}', '', src.name)
+        new_filename = f"{source_folder_name} {clean_basename}"
+        rename_map.append({
+            "src": src,
+            "clean_basename": clean_basename,
+            "new_filename": new_filename,
+        })
+
+    print("\nComputed destination filenames:")
+    for entry in rename_map:
+        print(f"  {entry['src'].name} -> {entry['new_filename']}")
+
+    # Keep the computed map for subsequent steps (copy/plan). Stop here for Step 5.
     return 0
 
 
