@@ -129,8 +129,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    source_path = Path(args.source).resolve()
-    config_path = Path(args.config).resolve()
+    source_path = Path(args.source).expanduser().resolve()
+
+    # Step 3: Validate source folder
+    if not source_path.exists() or not source_path.is_dir():
+        print(f"ERROR: Source folder does not exist or is not a directory: {source_path}", file=sys.stderr)
+        sys.exit(2)
+
+    config_path = Path(args.config).expanduser().resolve()
 
     # Step 2: Load and validate config
     config = load_config(config_path)
