@@ -189,7 +189,40 @@ def main(argv: list[str] | None = None) -> int:
     for entry in rename_map:
         print(f"  {entry['src'].name} -> {entry['new_filename']}")
 
-    # Keep the computed map for subsequent steps (copy/plan). Stop here for Step 5.
+    # Step 6: Plan operations (what to copy where)
+    plan: list[dict] = []
+    for entry in rename_map:
+        src = entry["src"]
+        new_filename = entry["new_filename"]
+        for dest_str in config["destinations"]:
+            dest_dir = Path(dest_str).expanduser().resolve()
+            dest_file_path = dest_dir / new_filename
+            if dest_file_path.exists():
+                action = "SKIP_ALREADY_EXISTS"
+            else:
+                action = "COPY"
+            plan.append({
+                "src": src,
+                "dest_dir": dest_dir,
+                "dest_path": dest_file_path,
+                "action": action,
+            })
+
+    if args.dry_run:
+        print("\nDry-run plan (no files will be copied):")
+        for p in plan:
+            if p["action"] == "COPY":
+                print(f"WOULD COPY: {p['src']} -> {p['dest_path']}")
+            else:
+                print(f"WOULD SKIP (exists): {p['dest_path']}")
+        # Milestone: dry-run shows exact plan without filesystem writes
+        return 0
+
+    # Persist the plan for subsequent copy execution (Step 7)
+    print("\nPlanned actions (will execute in non-dry-run runs):")
+    for p in plan:
+        print(f"  - {p['action']}: {p['src'].name} -> {p['dest_path']}")
+
     return 0
 
 
