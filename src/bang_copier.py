@@ -16,6 +16,7 @@ import json
 import sys
 from pathlib import Path
 import re
+import shutil
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -218,11 +219,41 @@ def main(argv: list[str] | None = None) -> int:
         # Milestone: dry-run shows exact plan without filesystem writes
         return 0
 
-    # Persist the plan for subsequent copy execution (Step 7)
-    print("\nPlanned actions (will execute in non-dry-run runs):")
-    for p in plan:
-        print(f"  - {p['action']}: {p['src'].name} -> {p['dest_path']}")
+    # Step 7: Copy execution (non-dry-run)
+    copies_performed = 0
+    skips = 0
+    errors = 0
 
+    print("\nExecuting plan:")
+    for p in plan:
+        src = p["src"]
+        dest_path = p["dest_path"]
+        if p["action"] == "SKIP_ALREADY_EXISTS":
+            skips += 1
+            p["status"] = "SKIPPED_ALREADY_EXISTS"
+            print(f"SKIPPED (exists): {dest_path}")
+            continue
+
+        try:
+            # Attempt to copy, preserve metadata
+            shutil.copy2(src, dest_path)
+            copies_performed += 1
+            p["status"] = "SUCCESS"
+            print(f"COPIED: {src} -> {dest_path}")
+        except Exception as e:
+            errors += 1
+            p["status"] = "ERROR"
+            p["error"] = str(e)
+            print(f"ERROR copying {src} -> {dest_path}: {e}", file=sys.stderr)
+
+    # Summary for this execution
+    print("\nExecution summary:")
+    print(f"  Matched files: {len(matched_files)}")
+    print(f"  Copies performed: {copies_performed}")
+    print(f"  Skips (already exists): {skips}")
+    print(f"  Errors: {errors}")
+
+    # Keep plan/results in memory for Step 8 (logging)
     return 0
 
 
