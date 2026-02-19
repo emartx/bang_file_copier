@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 import re
 import shutil
+from datetime import datetime
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -253,7 +254,35 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  Skips (already exists): {skips}")
     print(f"  Errors: {errors}")
 
-    # Keep plan/results in memory for Step 8 (logging)
+    # Step 8: Logging (one log per non-dry-run execution)
+    try:
+        now = datetime.now()
+        log_filename = f"bang_copier_{now.strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        log_path = log_dir / log_filename
+
+        with open(log_path, "w", encoding="utf-8") as lf:
+            lf.write(f"Bang File Copier run: {now.isoformat()}\n")
+            lf.write(f"Source: {source_path}\n")
+            lf.write("Destinations:\n")
+            for d in config["destinations"]:
+                lf.write(f"  - {Path(d).expanduser().resolve()}\n")
+            lf.write("\nEntries:\n")
+            lf.write("timestamp | src | dest | original_filename | new_filename | status | message\n")
+            for p in plan:
+                ts = now.isoformat()
+                src = p.get("src")
+                dest = p.get("dest_path")
+                orig = src.name if src is not None else ""
+                newfn = dest.name if dest is not None else ""
+                status = p.get("status", "UNKNOWN")
+                msg = p.get("error", "")
+                lf.write(f"{ts} | {src} | {dest} | {orig} | {newfn} | {status} | {msg}\n")
+
+        print(f"Log written: {log_path}")
+    except Exception as e:
+        print(f"ERROR: Failed to write log file: {e}", file=sys.stderr)
+
+    # Keep plan/results in memory if further steps needed
     return 0
 
 
