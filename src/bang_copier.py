@@ -20,7 +20,6 @@ import shutil
 from datetime import datetime
 import csv
 
-
 def build_parser() -> argparse.ArgumentParser:
     epilog = (
         "Examples:\n"
@@ -57,7 +56,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     return parser
 
-
 def load_config(config_path: Path) -> dict:
     """Load and validate JSON config file. Exit with code 2 on failure."""
     if not config_path.exists():
@@ -75,7 +73,6 @@ def load_config(config_path: Path) -> dict:
         sys.exit(2)
 
     return config
-
 
 def validate_config(config: dict) -> dict:
     """Validate config structure and destination folders. Exit with code 2 on failure."""
@@ -135,7 +132,6 @@ def validate_config(config: dict) -> dict:
 
     return config
 
-
 def resolve_log_dir(config: dict) -> Path:
     """Resolve log directory from config or fallback. Create if missing."""
     if "log_dir" in config and config["log_dir"]:
@@ -148,58 +144,23 @@ def resolve_log_dir(config: dict) -> Path:
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir
 
-
-def main(argv: list[str] | None = None) -> int:
-    argv = argv if argv is not None else sys.argv[1:]
+def parse_args_and_config(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
-
     source_path = Path(args.source).expanduser().resolve()
-
-    # Step 3: Validate source folder
-    if not source_path.exists() or not source_path.is_dir():
-        print(f"ERROR: Source folder does not exist or is not a directory: {source_path}", file=sys.stderr)
-        sys.exit(2)
-
     config_path = Path(args.config).expanduser().resolve()
-
-    # Step 2: Load and validate config
     config = load_config(config_path)
     config = validate_config(config)
     log_dir = resolve_log_dir(config)
+    return args, source_path, config, log_dir
 
-    print("✓ Config loaded and validated")
-    print("  Destinations:")
-    for dest in config["destinations"]:
-        print(f"    - {Path(dest).expanduser().resolve()}")
-    print(f"  Log directory: {log_dir}")
-    print()
-    print("Parsed arguments:")
-    print("  source:", source_path)
-    print("  config:", config_path)
-    print("  dry_run:", bool(args.dry_run))
-
-    # Step 4: Scan for eligible files (top-level only)
-    # Match exactly 1..3 leading '!' followed by a non-'!' character
+def scan_eligible_files(source_path):
     pattern = re.compile(r'^(?:!{1,3})[^!].*')
-    matched_files: list[Path] = []
-    for item in source_path.iterdir():
-        if not item.is_file():
-            continue
-        if pattern.match(item.name):
-            matched_files.append(item)
+    matched_files = [item for item in source_path.iterdir() if item.is_file() and pattern.match(item.name)]
+    return matched_files
 
-    if not matched_files:
-        print("No eligible '!' files found. Exiting.")
-        return 0
-
-    print(f"Found {len(matched_files)} eligible file(s):")
-    for p in matched_files:
-        print(f"  - {p.name}")
-
-    # Step 5: Compute destination filenames (remove 1..3 leading '!')
-    source_folder_name = source_path.name
-    rename_map: list[dict] = []
+def compute_rename_map(matched_files, source_folder_name):
+    rename_map = []
     for src in matched_files:
         clean_basename = re.sub(r'^!{1,3}', '', src.name)
         new_filename = f"{source_folder_name} {clean_basename}"
@@ -208,17 +169,14 @@ def main(argv: list[str] | None = None) -> int:
             "clean_basename": clean_basename,
             "new_filename": new_filename,
         })
+    return rename_map
 
-    print("\nComputed destination filenames:")
-    for entry in rename_map:
-        print(f"  {entry['src'].name} -> {entry['new_filename']}")
-
-    # Step 6: Plan operations (what to copy where)
-    plan: list[dict] = []
+def plan_operations(rename_map, destinations):
+    plan = []
     for entry in rename_map:
         src = entry["src"]
         new_filename = entry["new_filename"]
-        for dest_str in config["destinations"]:
+        for dest_str in destinations:
             dest_dir = Path(dest_str).expanduser().resolve()
             dest_file_path = dest_dir / new_filename
             if dest_file_path.exists():
@@ -231,57 +189,40 @@ def main(argv: list[str] | None = None) -> int:
                 "dest_path": dest_file_path,
                 "action": action,
             })
+    return plan
 
-    if args.dry_run:
-        print("\nDry-run plan (no files will be copied):")
-        for p in plan:
-            if p["action"] == "COPY":
-                print(f"WOULD COPY: {p['src']} -> {p['dest_path']}")
-            else:
-                print(f"WOULD SKIP (exists): {p['dest_path']}")
-        # Milestone: dry-run shows exact plan without filesystem writes
-        return 0
-
-    # Step 7: Copy execution (non-dry-run)
+def execute_plan(plan):
     copies_performed = 0
     skips = 0
     errors = 0
-
-    print("\nExecuting plan:")
     for p in plan:
         src = p["src"]
         dest_path = p["dest_path"]
         if p["action"] == "SKIP_ALREADY_EXISTS":
             skips += 1
             p["status"] = "SKIPPED_ALREADY_EXISTS"
-            print(f"SKIPPED (exists): {dest_path}")
             continue
-
         try:
-            # Attempt to copy, preserve metadata
             shutil.copy2(src, dest_path)
             copies_performed += 1
             p["status"] = "SUCCESS"
-            print(f"COPIED: {src} -> {dest_path}")
         except Exception as e:
             errors += 1
             p["status"] = "ERROR"
             p["error"] = str(e)
-            print(f"ERROR copying {src} -> {dest_path}: {e}", file=sys.stderr)
+    return copies_performed, skips, errors
 
-    # Summary for this execution
+def print_summary(plan, matched_files, copies_performed, skips, errors):
     print("\nExecution summary:")
     print(f"  Matched files: {len(matched_files)}")
     print(f"  Copies performed: {copies_performed}")
     print(f"  Skips (already exists): {skips}")
     print(f"  Errors: {errors}")
 
-    # Step 8: Logging (one log per non-dry-run execution) — produce formats based on config
+def write_logs(plan, config, log_dir, source_path):
     now = datetime.now()
     run_id = now.strftime('%Y-%m-%d_%H-%M-%S')
     formats = config.get("log_formats", ["log"]) or ["log"]
-
-    # Write plain text log if requested
     if "log" in formats:
         try:
             log_filename = f"bang_copier_{run_id}.log"
@@ -303,12 +244,9 @@ def main(argv: list[str] | None = None) -> int:
                     status = p.get("status", "UNKNOWN")
                     msg = p.get("error", "")
                     lf.write(f"{ts} | {src} | {dest} | {orig} | {newfn} | {status} | {msg}\n")
-
             print(f"Log written: {log_path}")
         except Exception as e:
             print(f"ERROR: Failed to write log file: {e}", file=sys.stderr)
-
-    # Write CSV if requested
     if "csv" in formats:
         try:
             csv_filename = f"bang_copier_{run_id}.csv"
@@ -343,14 +281,68 @@ def main(argv: list[str] | None = None) -> int:
                         ts,
                         msg
                     ])
-
             print(f"CSV written: {csv_path}")
         except Exception as e:
             print(f"ERROR: Failed to write CSV log file: {e}", file=sys.stderr)
 
-    # Keep plan/results in memory if further steps needed
+def main(argv: list[str] | None = None) -> int:
+    args, source_path, config, log_dir = parse_args_and_config(argv)
+    if not source_path.exists() or not source_path.is_dir():
+        print(f"ERROR: Source folder does not exist or is not a directory: {source_path}", file=sys.stderr)
+        sys.exit(2)
+    print("✓ Config loaded and validated")
+    print("  Destinations:")
+    for dest in config["destinations"]:
+        print(f"    - {Path(dest).expanduser().resolve()}")
+    print(f"  Log directory: {log_dir}")
+    print()
+    print("Parsed arguments:")
+    print("  source:", source_path)
+    print("  config:", Path(args.config).expanduser().resolve())
+    print("  dry_run:", bool(args.dry_run))
+    matched_files = scan_eligible_files(source_path)
+    if not matched_files:
+        print("No eligible '!' files found. Exiting.")
+        return 0
+    print(f"Found {len(matched_files)} eligible file(s):")
+    for p in matched_files:
+        print(f"  - {p.name}")
+    rename_map = compute_rename_map(matched_files, source_path.name)
+    print("\nComputed destination filenames:")
+    for entry in rename_map:
+        print(f"  {entry['src'].name} -> {entry['new_filename']}")
+    plan = plan_operations(rename_map, config["destinations"])
+    if args.dry_run:
+        print("\nDry-run plan (no files will be copied):")
+        for p in plan:
+            if p["action"] == "COPY":
+                print(f"WOULD COPY: {p['src']} -> {p['dest_path']}")
+            else:
+                print(f"WOULD SKIP (exists): {p['dest_path']}")
+        return 0
+    print("\nExecuting plan:")
+    for p in plan:
+        src = p["src"]
+        dest_path = p["dest_path"]
+        if p["action"] == "SKIP_ALREADY_EXISTS":
+            print(f"SKIPPED (exists): {dest_path}")
+            p["status"] = "SKIPPED_ALREADY_EXISTS"
+            continue
+        try:
+            shutil.copy2(src, dest_path)
+            print(f"COPIED: {src} -> {dest_path}")
+            p["status"] = "SUCCESS"
+        except Exception as e:
+            print(f"ERROR copying {src} -> {dest_path}: {e}", file=sys.stderr)
+            p["status"] = "ERROR"
+            p["error"] = str(e)
+    # Count results
+    copies_performed = sum(1 for p in plan if p.get("status") == "SUCCESS")
+    skips = sum(1 for p in plan if p.get("status") == "SKIPPED_ALREADY_EXISTS")
+    errors = sum(1 for p in plan if p.get("status") == "ERROR")
+    print_summary(plan, matched_files, copies_performed, skips, errors)
+    write_logs(plan, config, log_dir, source_path)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
