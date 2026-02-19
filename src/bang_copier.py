@@ -321,25 +321,16 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"WOULD SKIP (exists): {p['dest_path']}")
         return 0
     print("\nExecuting plan:")
+    copies_performed, skips, errors = execute_plan(plan)
     for p in plan:
         src = p["src"]
         dest_path = p["dest_path"]
         if p["action"] == "SKIP_ALREADY_EXISTS":
             print(f"SKIPPED (exists): {dest_path}")
-            p["status"] = "SKIPPED_ALREADY_EXISTS"
-            continue
-        try:
-            shutil.copy2(src, dest_path)
+        elif p.get("status") == "SUCCESS":
             print(f"COPIED: {src} -> {dest_path}")
-            p["status"] = "SUCCESS"
-        except Exception as e:
-            print(f"ERROR copying {src} -> {dest_path}: {e}", file=sys.stderr)
-            p["status"] = "ERROR"
-            p["error"] = str(e)
-    # Count results
-    copies_performed = sum(1 for p in plan if p.get("status") == "SUCCESS")
-    skips = sum(1 for p in plan if p.get("status") == "SKIPPED_ALREADY_EXISTS")
-    errors = sum(1 for p in plan if p.get("status") == "ERROR")
+        elif p.get("status") == "ERROR":
+            print(f"ERROR copying {src} -> {dest_path}: {p.get('error')}", file=sys.stderr)
     print_summary(plan, matched_files, copies_performed, skips, errors)
     write_logs(plan, config, log_dir, source_path)
     return 0
