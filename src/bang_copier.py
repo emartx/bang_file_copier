@@ -18,6 +18,7 @@ from pathlib import Path
 import re
 import shutil
 from datetime import datetime
+import csv
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -110,6 +111,27 @@ def validate_config(config: dict) -> dict:
         if not dest_path.is_dir():
             print(f"ERROR: Destination is not a directory: {dest_path}", file=sys.stderr)
             sys.exit(2)
+
+    # Optional: validate log_formats
+    allowed_formats = {"csv", "log", "json"}
+    if "log_formats" in config:
+        lf = config["log_formats"]
+        if not isinstance(lf, list):
+            print("ERROR: 'log_formats' must be a list", file=sys.stderr)
+            sys.exit(2)
+        if not lf:
+            print("ERROR: 'log_formats' list is empty", file=sys.stderr)
+            sys.exit(2)
+        for fmt in lf:
+            if not isinstance(fmt, str):
+                print(f"ERROR: 'log_formats' contains non-string: {fmt}", file=sys.stderr)
+                sys.exit(2)
+            if fmt not in allowed_formats:
+                print(f"ERROR: Unsupported log format: {fmt}", file=sys.stderr)
+                sys.exit(2)
+    else:
+        # default to plain log only
+        config["log_formats"] = ["log"]
 
     return config
 
@@ -254,33 +276,77 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  Skips (already exists): {skips}")
     print(f"  Errors: {errors}")
 
-    # Step 8: Logging (one log per non-dry-run execution)
-    try:
-        now = datetime.now()
-        log_filename = f"bang_copier_{now.strftime('%Y-%m-%d_%H-%M-%S')}.log"
-        log_path = log_dir / log_filename
+    # Step 8: Logging (one log per non-dry-run execution) — produce formats based on config
+    now = datetime.now()
+    run_id = now.strftime('%Y-%m-%d_%H-%M-%S')
+    formats = config.get("log_formats", ["log"]) or ["log"]
 
-        with open(log_path, "w", encoding="utf-8") as lf:
-            lf.write(f"Bang File Copier run: {now.isoformat()}\n")
-            lf.write(f"Source: {source_path}\n")
-            lf.write("Destinations:\n")
-            for d in config["destinations"]:
-                lf.write(f"  - {Path(d).expanduser().resolve()}\n")
-            lf.write("\nEntries:\n")
-            lf.write("timestamp | src | dest | original_filename | new_filename | status | message\n")
-            for p in plan:
-                ts = now.isoformat()
-                src = p.get("src")
-                dest = p.get("dest_path")
-                orig = src.name if src is not None else ""
-                newfn = dest.name if dest is not None else ""
-                status = p.get("status", "UNKNOWN")
-                msg = p.get("error", "")
-                lf.write(f"{ts} | {src} | {dest} | {orig} | {newfn} | {status} | {msg}\n")
+    # Write plain text log if requested
+    if "log" in formats:
+        try:
+            log_filename = f"bang_copier_{run_id}.log"
+            log_path = log_dir / log_filename
+            with open(log_path, "w", encoding="utf-8") as lf:
+                lf.write(f"Bang File Copier run: {now.isoformat()}\n")
+                lf.write(f"Source: {source_path}\n")
+                lf.write("Destinations:\n")
+                for d in config["destinations"]:
+                    lf.write(f"  - {Path(d).expanduser().resolve()}\n")
+                lf.write("\nEntries:\n")
+                lf.write("timestamp | src | dest | original_filename | new_filename | status | message\n")
+                for p in plan:
+                    ts = now.isoformat()
+                    src = p.get("src")
+                    dest = p.get("dest_path")
+                    orig = src.name if src is not None else ""
+                    newfn = dest.name if dest is not None else ""
+                    status = p.get("status", "UNKNOWN")
+                    msg = p.get("error", "")
+                    lf.write(f"{ts} | {src} | {dest} | {orig} | {newfn} | {status} | {msg}\n")
 
-        print(f"Log written: {log_path}")
-    except Exception as e:
-        print(f"ERROR: Failed to write log file: {e}", file=sys.stderr)
+            print(f"Log written: {log_path}")
+        except Exception as e:
+            print(f"ERROR: Failed to write log file: {e}", file=sys.stderr)
+
+    # Write CSV if requested
+    if "csv" in formats:
+        try:
+            csv_filename = f"bang_copier_{run_id}.csv"
+            csv_path = log_dir / csv_filename
+            with open(csv_path, "w", encoding="utf-8", newline="") as cf:
+                writer = csv.writer(cf)
+                writer.writerow([
+                    "run_id",
+                    "source",
+                    "original_filename",
+                    "new_filename",
+                    "status",
+                    "destination",
+                    "timestamp",
+                    "message"
+                ])
+                for p in plan:
+                    ts = now.isoformat()
+                    src = p.get("src")
+                    dest = p.get("dest_path")
+                    orig = src.name if src is not None else ""
+                    newfn = dest.name if dest is not None else ""
+                    status = p.get("status", "UNKNOWN")
+                    msg = p.get("error", "")
+                    writer.writerow([
+                        run_id,
+                        str(source_path),
+                        orig,
+                        newfn,
+                        status,
+                        str(dest),
+                        ts,
+                        msg
+                    ])
+
+            print(f"CSV written: {csv_path}")
+        except Exception as e:
+            print(f"ERROR: Failed to write CSV log file: {e}", file=sys.stderr)
 
     # Keep plan/results in memory if further steps needed
     return 0

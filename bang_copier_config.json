@@ -4,6 +4,7 @@
     "~/Documents/dest2"
   ],
   "log_dir": "~/bang-copier-logs",
+  "log_formats": ["csv", "log"],
   "remove_bang_prefix": true,
   "scan_recursively": false
 }
