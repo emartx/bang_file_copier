@@ -2,6 +2,15 @@
 
 ---
 
+## Overview
+
+**Bang File Copier** is a lightweight command-line tool written in Python that scans a given directory for files whose names start with an exclamation mark (`!`), then copies those files into two predefined destination directories.
+During the copy process, each file is renamed by prefixing it with the source folder’s name.
+
+The tool is designed as a personal automation utility, with a focus on simplicity, portability, and future extensibility (e.g., logging, dry-run, and configurable destinations).
+
+---
+
 ## Packaging & Installation
 
 ### 1. Shebang
@@ -25,15 +34,6 @@ With `pyproject.toml` present, install in editable mode:
   pip install -e .
 
 This provides a `bang-copy` command globally (if `[project.scripts]` is set).
-
----
-
-## Overview
-
-**Bang File Copier** is a lightweight command-line tool written in Python that scans a given directory for files whose names start with an exclamation mark (`!`), then copies those files into two predefined destination directories.
-During the copy process, each file is renamed by prefixing it with the source folder’s name.
-
-The tool is designed as a personal automation utility, with a focus on simplicity, portability, and future extensibility (e.g., logging, dry-run, and configurable destinations).
 
 ---
 
