@@ -212,17 +212,22 @@ def execute_plan(plan):
             p["error"] = str(e)
     return copies_performed, skips, errors
 
-def print_summary(plan, matched_files, copies_performed, skips, errors):
-    print("\nExecution summary:")
+def print_summary(plan, matched_files, copies_performed, skips, errors, log_path=None, dry_run=False):
+    print("\nSummary:")
     print(f"  Matched files: {len(matched_files)}")
     print(f"  Copies performed: {copies_performed}")
     print(f"  Skips (already exists): {skips}")
     print(f"  Errors: {errors}")
+    if dry_run:
+        print("  (dry-run: no files copied, no log created)")
+    elif log_path:
+        print(f"  Log file: {log_path}")
 
 def write_logs(plan, config, log_dir, source_path):
     now = datetime.now()
     run_id = now.strftime('%Y-%m-%d_%H-%M-%S')
     formats = config.get("log_formats", ["log"]) or ["log"]
+    log_path = None
     if "log" in formats:
         try:
             log_filename = f"bang_copier_{run_id}.log"
@@ -284,6 +289,7 @@ def write_logs(plan, config, log_dir, source_path):
             print(f"CSV written: {csv_path}")
         except Exception as e:
             print(f"ERROR: Failed to write CSV log file: {e}", file=sys.stderr)
+    return log_path
 
 def main(argv: list[str] | None = None) -> int:
     args, source_path, config, log_dir = parse_args_and_config(argv)
@@ -303,7 +309,8 @@ def main(argv: list[str] | None = None) -> int:
     matched_files = scan_eligible_files(source_path)
     if not matched_files:
         print("No eligible '!' files found. Exiting.")
-        return 0
+        print_summary([], [], 0, 0, 0, dry_run=args.dry_run)
+        return 0  # Success, no files matched
     print(f"Found {len(matched_files)} eligible file(s):")
     for p in matched_files:
         print(f"  - {p.name}")
@@ -319,7 +326,8 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"WOULD COPY: {p['src']} -> {p['dest_path']}")
             else:
                 print(f"WOULD SKIP (exists): {p['dest_path']}")
-        return 0
+        print_summary(plan, matched_files, 0, 0, 0, dry_run=True)
+        return 0  # Dry-run is always success
     print("\nExecuting plan:")
     copies_performed, skips, errors = execute_plan(plan)
     for p in plan:
@@ -331,9 +339,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"COPIED: {src} -> {dest_path}")
         elif p.get("status") == "ERROR":
             print(f"ERROR copying {src} -> {dest_path}: {p.get('error')}", file=sys.stderr)
-    print_summary(plan, matched_files, copies_performed, skips, errors)
-    write_logs(plan, config, log_dir, source_path)
-    return 0
+    log_path = write_logs(plan, config, log_dir, source_path)
+    print_summary(plan, matched_files, copies_performed, skips, errors, log_path=log_path, dry_run=False)
+    if errors > 0:
+        return 1  # Partial failure
+    return 0  # Full success
 
 if __name__ == "__main__":
     raise SystemExit(main())
