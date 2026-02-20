@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/bang_copier.py
+src/bang_file_copier.egg-info/PKG-INFO
+src/bang_file_copier.egg-info/SOURCES.txt
+src/bang_file_copier.egg-info/dependency_links.txt
+src/bang_file_copier.egg-info/entry_points.txt
+src/bang_file_copier.egg-info/top_level.txt
