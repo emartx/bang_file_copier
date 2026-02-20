@@ -1,1 +1,5 @@
 *.test_ext
+.DS_Store
+*.log
+*.tmp
+*.bak
