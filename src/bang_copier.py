@@ -165,7 +165,9 @@ def scan_eligible_files(source_path):
 def compute_rename_map(matched_files, source_folder_name):
     rename_map = []
     for src in matched_files:
-        clean_basename = re.sub(r'^!{1,3}', '', src.name)
+        # Remove leading exclamation marks from the filename
+        # clean_basename = re.sub(r'^!{1,3}', '', src.name)
+        clean_basename = src.name
         new_filename = f"{source_folder_name} {clean_basename}"
         rename_map.append({
             "src": src,
@@ -200,7 +202,8 @@ def get_copy_strategy():
     return shutil.copy2
 
 def copy_file(src, dest):
-    subprocess.run(["ditto", src, dest], check=True)
+    # Ensure we pass string paths to subprocess; ditto preserves Finder tags/metadata on macOS
+    subprocess.run(["ditto", str(src), str(dest)], check=True)
 
 def execute_plan(plan):
     copies_performed = 0
