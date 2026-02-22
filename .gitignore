@@ -1,5 +1,24 @@
-*.test_ext
-.DS_Store
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
 *.log
+
+# OS files
+.DS_Store
+
+# My files
+*.test_ext
 *.tmp
 *.bak
