@@ -176,6 +176,37 @@ def compute_rename_map(matched_files, source_folder_name):
         })
     return rename_map
 
+def print_config_and_args(source_path, args, config, log_dir):
+    print("✓ Config loaded and validated")
+    print("  Destinations:")
+    for dest in config["destinations"]:
+        print(f"    - {Path(dest).expanduser().resolve()}")
+    print(f"  Log directory: {log_dir}")
+    print()
+    print("Parsed arguments:")
+    print("  source:", source_path)
+    print("  config:", Path(args.config).expanduser().resolve())
+    print("  dry_run:", bool(args.dry_run))
+
+def print_matches_and_renames(matched_files, rename_map):
+    print(f"Found {len(matched_files)} eligible file(s):")
+    for p in matched_files:
+        print(f"  - {p.name}")
+    print("\nComputed destination filenames:")
+    for entry in rename_map:
+        print(f"  {entry['src'].name} -> {entry['new_filename']}")
+
+def print_execution_results(plan):
+    for p in plan:
+        src = p["src"]
+        dest_path = p["dest_path"]
+        if p["action"] == "SKIP_ALREADY_EXISTS":
+            print(f"SKIPPED (exists): {dest_path}")
+        elif p.get("status") == "SUCCESS":
+            print(f"COPIED: {src} -> {dest_path}")
+        elif p.get("status") == "ERROR":
+            print(f"ERROR copying {src} -> {dest_path}: {p.get('error')}", file=sys.stderr)
+
 def plan_operations(rename_map, destinations):
     plan = []
     for entry in rename_map:
@@ -318,28 +349,14 @@ def main(argv: list[str] | None = None) -> int:
     if not source_path.exists() or not source_path.is_dir():
         print(f"ERROR: Source folder does not exist or is not a directory: {source_path}", file=sys.stderr)
         sys.exit(2)
-    print("✓ Config loaded and validated")
-    print("  Destinations:")
-    for dest in config["destinations"]:
-        print(f"    - {Path(dest).expanduser().resolve()}")
-    print(f"  Log directory: {log_dir}")
-    print()
-    print("Parsed arguments:")
-    print("  source:", source_path)
-    print("  config:", Path(args.config).expanduser().resolve())
-    print("  dry_run:", bool(args.dry_run))
+    print_config_and_args(source_path, args, config, log_dir)
     matched_files = scan_eligible_files(source_path)
     if not matched_files:
         print("No eligible '!' files found. Exiting.")
         print_summary([], [], 0, 0, 0, dry_run=args.dry_run)
         return 0  # Success, no files matched
-    print(f"Found {len(matched_files)} eligible file(s):")
-    for p in matched_files:
-        print(f"  - {p.name}")
     rename_map = compute_rename_map(matched_files, source_path.name)
-    print("\nComputed destination filenames:")
-    for entry in rename_map:
-        print(f"  {entry['src'].name} -> {entry['new_filename']}")
+    print_matches_and_renames(matched_files, rename_map)
     plan = plan_operations(rename_map, config["destinations"])
     if args.dry_run:
         print("\nDry-run plan (no files will be copied):")
@@ -352,15 +369,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0  # Dry-run is always success
     print("\nExecuting plan:")
     copies_performed, skips, errors = execute_plan(plan)
-    for p in plan:
-        src = p["src"]
-        dest_path = p["dest_path"]
-        if p["action"] == "SKIP_ALREADY_EXISTS":
-            print(f"SKIPPED (exists): {dest_path}")
-        elif p.get("status") == "SUCCESS":
-            print(f"COPIED: {src} -> {dest_path}")
-        elif p.get("status") == "ERROR":
-            print(f"ERROR copying {src} -> {dest_path}: {p.get('error')}", file=sys.stderr)
+    print_execution_results(plan)
     log_path = write_logs(plan, config, log_dir, source_path)
     print_summary(plan, matched_files, copies_performed, skips, errors, log_path=log_path, dry_run=False)
     if errors > 0:
