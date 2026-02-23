@@ -1,6 +1,5 @@
 TODO:
 - Change the config using CLI
-- move all the related print lines to a function
 - make some packages for each set of functions
 - make the prints in better styles, like a rectangle
 - add __pycache__ folder to gitignore
