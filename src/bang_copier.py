@@ -29,9 +29,25 @@ try:
     from rich.panel import Panel
     from rich.table import Table
     from rich import box
+    import pyfiglet
     _HAS_RICH = True
 except Exception:
     _HAS_RICH = False
+
+def print_intro():
+    # Fallback to plain print when rich/pyfiglet unavailable
+    if not _HAS_RICH:
+        print("Bang File Copier")
+        return
+
+    console = Console()
+    # Large ASCII title (pyfiglet may still fail at runtime)
+    try:
+        title = pyfiglet.figlet_format("Bang File Copier")
+    except Exception:
+        title = "Bang File Copier"
+    # Use a Panel sized to the content to avoid breaking figlet spacing
+    console.print(Panel(title, style="bold green", expand=False))
 
 def build_parser() -> argparse.ArgumentParser:
     epilog = (
@@ -384,6 +400,7 @@ def write_logs(plan, config, log_dir, source_path):
     return log_path
 
 def main(argv: list[str] | None = None) -> int:
+    print_intro()
     args, source_path, config, log_dir = parse_args_and_config(argv)
     if not source_path.exists() or not source_path.is_dir():
         print(f"ERROR: Source folder does not exist or is not a directory: {source_path}", file=sys.stderr)
