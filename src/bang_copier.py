@@ -23,6 +23,16 @@ import subprocess
 import shutil
 import platform
 
+# Optional pretty output
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich import box
+    _HAS_RICH = True
+except Exception:
+    _HAS_RICH = False
+
 def build_parser() -> argparse.ArgumentParser:
     epilog = (
         "Examples:\n"
@@ -177,16 +187,45 @@ def compute_rename_map(matched_files, source_folder_name):
     return rename_map
 
 def print_config_and_args(source_path, args, config, log_dir):
-    print("✓ Config loaded and validated")
-    print("  Destinations:")
-    for dest in config["destinations"]:
-        print(f"    - {Path(dest).expanduser().resolve()}")
-    print(f"  Log directory: {log_dir}")
-    print()
-    print("Parsed arguments:")
-    print("  source:", source_path)
-    print("  config:", Path(args.config).expanduser().resolve())
-    print("  dry_run:", bool(args.dry_run))
+    if not _HAS_RICH:
+        print("✓ Config loaded and validated")
+        print("  Destinations:")
+        for dest in config["destinations"]:
+            print(f"    - {Path(dest).expanduser().resolve()}")
+        print(f"  Log directory: {log_dir}")
+        print()
+        print("Parsed arguments:")
+        print("  source:", source_path)
+        print("  config:", Path(args.config).expanduser().resolve())
+        print("  dry_run:", bool(args.dry_run))
+        return
+
+    console = Console()
+    # Single table with sections separated by divider rows
+    table = Table(show_header=False, expand=True, box=box.SIMPLE)
+    table.add_column(justify="right", style="cyan", no_wrap=True, ratio=1)
+    table.add_column(ratio=4)
+
+    # Destinations section
+    table.add_row("Destinations", "")
+    for d in config["destinations"]:
+        table.add_row("", str(Path(d).expanduser().resolve()))
+
+    # Divider
+    table.add_row("", "[dim]" + ("—" * 48) + "[/dim]")
+
+    # Log directory
+    table.add_row("Log dir", str(log_dir))
+
+    # Divider
+    table.add_row("", "[dim]" + ("—" * 48) + "[/dim]")
+
+    # Arguments section
+    table.add_row("Source", str(source_path))
+    table.add_row("Config", str(Path(args.config).expanduser().resolve()))
+    table.add_row("Dry-run", str(bool(args.dry_run)))
+
+    console.print(Panel(table, title="Run Info"))
 
 def print_matches_and_renames(matched_files, rename_map):
     print(f"Found {len(matched_files)} eligible file(s):")

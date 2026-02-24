@@ -11,6 +11,10 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    "rich>=10.0",
+    "pyfiglet>=0.8"
+]
 
 [project.scripts]
 bang-copy = "bang_copier:main"
