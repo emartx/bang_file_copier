@@ -244,23 +244,62 @@ def print_config_and_args(source_path, args, config, log_dir):
     console.print(Panel(table, title="Run Info"))
 
 def print_matches_and_renames(matched_files, rename_map):
-    print(f"Found {len(matched_files)} eligible file(s):")
-    for p in matched_files:
-        print(f"  - {p.name}")
-    print("\nComputed destination filenames:")
+    if not _HAS_RICH:
+        print(f"Found {len(matched_files)} eligible file(s):")
+        for p in matched_files:
+            print(f"  - {p.name}")
+        print("\nComputed destination filenames:")
+        for entry in rename_map:
+            print(f"  {entry['src'].name} -> {entry['new_filename']}")
+        return
+
+    console = Console()
+    table = Table(show_header=True, header_style="bold magenta", box=box.SIMPLE)
+    table.add_column("Original Filename", style="cyan")
+    table.add_column("New Filename", style="green")
+
     for entry in rename_map:
-        print(f"  {entry['src'].name} -> {entry['new_filename']}")
+        table.add_row(entry['src'].name, entry['new_filename'])
+
+    console.print(Panel(table, title=f"Found {len(matched_files)} File(s) to Copy"))
 
 def print_execution_results(plan):
+    if not _HAS_RICH:
+        for p in plan:
+            src = p["src"]
+            dest_path = p["dest_path"]
+            if p["action"] == "SKIP_ALREADY_EXISTS":
+                print(f"SKIPPED (exists): {dest_path}")
+            elif p.get("status") == "SUCCESS":
+                print(f"COPIED: {src} -> {dest_path}")
+            elif p.get("status") == "ERROR":
+                print(f"ERROR copying {src} -> {dest_path}: {p.get('error')}", file=sys.stderr)
+        return
+
+    console = Console()
+    table = Table(show_header=True, header_style="bold magenta", box=box.SIMPLE)
+    table.add_column("Source", style="cyan")
+    table.add_column("Destination", style="cyan")
+    table.add_column("Status", style="yellow")
+
     for p in plan:
         src = p["src"]
         dest_path = p["dest_path"]
-        if p["action"] == "SKIP_ALREADY_EXISTS":
-            print(f"SKIPPED (exists): {dest_path}")
-        elif p.get("status") == "SUCCESS":
-            print(f"COPIED: {src} -> {dest_path}")
-        elif p.get("status") == "ERROR":
-            print(f"ERROR copying {src} -> {dest_path}: {p.get('error')}", file=sys.stderr)
+        status = p.get("status", "UNKNOWN")
+        error_msg = p.get("error", "")
+
+        if status == "SKIPPED_ALREADY_EXISTS":
+            status_display = "[yellow]SKIPPED[/yellow]"
+        elif status == "SUCCESS":
+            status_display = "[green]SUCCESS[/green]"
+        elif status == "ERROR":
+            status_display = f"[red]ERROR[/red]: {error_msg}"
+        else:
+            status_display = status
+
+        table.add_row(src.name, str(dest_path), status_display)
+
+    console.print(Panel(table, title="Execution Results"))
 
 def plan_operations(rename_map, destinations):
     plan = []
@@ -321,21 +360,39 @@ def execute_plan(plan):
     return copies_performed, skips, errors
 
 def print_summary(plan, matched_files, copies_performed, skips, errors, log_path=None, dry_run=False):
-    print("\nSummary:")
-    print(f"  Matched files: {len(matched_files)}")
-    print(f"  Copies performed: {copies_performed}")
-    print(f"  Skips (already exists): {skips}")
-    print(f"  Errors: {errors}")
+    if not _HAS_RICH:
+        print("\nSummary:")
+        print(f"  Matched files: {len(matched_files)}")
+        print(f"  Copies performed: {copies_performed}")
+        print(f"  Skips (already exists): {skips}")
+        print(f"  Errors: {errors}")
+        if dry_run:
+            print("  (dry-run: no files copied, no log created)")
+        elif log_path:
+            print(f"  Log file: {log_path}")
+        return
+
+    console = Console()
+    table = Table(show_header=False, box=box.SIMPLE)
+    table.add_column(justify="right", style="bold cyan", no_wrap=True, ratio=1)
+    table.add_column(ratio=4, style="bold green", no_wrap=False)
+
+    table.add_row("Matched files", str(len(matched_files)))
+    table.add_row("Copies performed", str(copies_performed))
+    table.add_row("Skips (already exists)", str(skips))
+    table.add_row("Errors", str(errors))
+
     if dry_run:
-        print("  (dry-run: no files copied, no log created)")
-    elif log_path:
-        print(f"  Log file: {log_path}")
+        table.add_row("Mode", "[yellow]DRY-RUN[/yellow] (no files copied)")
+
+    console.print(Panel(table, title="Summary"))
 
 def write_logs(plan, config, log_dir, source_path):
     now = datetime.now()
     run_id = now.strftime('%Y-%m-%d_%H-%M-%S')
     formats = config.get("log_formats", ["log"]) or ["log"]
     log_path = None
+    console = Console() if _HAS_RICH else None
     if "log" in formats:
         try:
             log_filename = f"bang_copier_{run_id}.log"
@@ -357,7 +414,10 @@ def write_logs(plan, config, log_dir, source_path):
                     status = p.get("status", "UNKNOWN")
                     msg = p.get("error", "")
                     lf.write(f"{ts} | {src} | {dest} | {orig} | {newfn} | {status} | {msg}\n")
-            print(f"Log written: {log_path}")
+            if console:
+                console.print(f"[green]✓ Log written:[/green] {log_path}")
+            else:
+                print(f"Log written: {log_path}")
         except Exception as e:
             print(f"ERROR: Failed to write log file: {e}", file=sys.stderr)
     if "csv" in formats:
@@ -394,7 +454,10 @@ def write_logs(plan, config, log_dir, source_path):
                         ts,
                         msg
                     ])
-            print(f"CSV written: {csv_path}")
+            if console:
+                console.print(f"[green]✓ CSV written:[/green] {csv_path}")
+            else:
+                print(f"CSV written: {csv_path}")
         except Exception as e:
             print(f"ERROR: Failed to write CSV log file: {e}", file=sys.stderr)
     return log_path
@@ -408,22 +471,44 @@ def main(argv: list[str] | None = None) -> int:
     print_config_and_args(source_path, args, config, log_dir)
     matched_files = scan_eligible_files(source_path)
     if not matched_files:
-        print("No eligible '!' files found. Exiting.")
+        if _HAS_RICH:
+            console = Console()
+            console.print(Panel("No eligible '!' files found. Exiting.", style="yellow", expand=False))
+        else:
+            print("No eligible '!' files found. Exiting.")
         print_summary([], [], 0, 0, 0, dry_run=args.dry_run)
         return 0  # Success, no files matched
     rename_map = compute_rename_map(matched_files, source_path.name)
     print_matches_and_renames(matched_files, rename_map)
     plan = plan_operations(rename_map, config["destinations"])
     if args.dry_run:
-        print("\nDry-run plan (no files will be copied):")
-        for p in plan:
-            if p["action"] == "COPY":
-                print(f"WOULD COPY: {p['src']} -> {p['dest_path']}")
-            else:
-                print(f"WOULD SKIP (exists): {p['dest_path']}")
+        if _HAS_RICH:
+            console = Console()
+            table = Table(show_header=True, header_style="bold magenta", box=box.SIMPLE)
+            table.add_column("Source", style="cyan")
+            table.add_column("Destination", style="cyan")
+            table.add_column("Action", style="yellow")
+            
+            for p in plan:
+                action = p["action"]
+                action_display = "[green]WOULD COPY[/green]" if action == "COPY" else "[yellow]WOULD SKIP[/yellow]"
+                table.add_row(p['src'].name, str(p['dest_path']), action_display)
+            
+            console.print(Panel(table, title="Dry-run Plan (no files will be copied)"))
+        else:
+            print("\nDry-run plan (no files will be copied):")
+            for p in plan:
+                if p["action"] == "COPY":
+                    print(f"WOULD COPY: {p['src']} -> {p['dest_path']}")
+                else:
+                    print(f"WOULD SKIP (exists): {p['dest_path']}")
         print_summary(plan, matched_files, 0, 0, 0, dry_run=True)
         return 0  # Dry-run is always success
-    print("\nExecuting plan:")
+    if _HAS_RICH:
+        console = Console()
+        console.print("[bold]Executing plan...[/bold]")
+    else:
+        print("\nExecuting plan:")
     copies_performed, skips, errors = execute_plan(plan)
     print_execution_results(plan)
     log_path = write_logs(plan, config, log_dir, source_path)
