@@ -225,7 +225,7 @@ Test scenarios:
 
 - Add a shebang: `#!/usr/bin/env python3`
 - Make executable: `chmod +x bang_copier.py`
-- Add a wrapper/alias: `bang-copy` → calls the script
+- Add a wrapper/alias: `bang` → calls the script
 - (Later) add `pyproject.toml` for installation as a proper CLI package
 
 ---

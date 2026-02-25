@@ -1,2 +1,2 @@
 [console_scripts]
-bang-copy = bang_copier:main
+bang = bang_copier:main

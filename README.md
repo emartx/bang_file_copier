@@ -48,14 +48,14 @@ Or install with the editable package (if `pyproject.toml` includes them):
 ### 4. Command Alias
 Add a shell alias to your `.bashrc`/`.zshrc`:
 
-  alias bang-copy='python3 /full/path/to/src/bang_copier.py'
+  alias bang='python3 /full/path/to/src/bang_copier.py'
 
 ### 5. Install as CLI (optional)
 With `pyproject.toml` present, install in editable mode:
 
   pip install -e .
 
-This provides a `bang-copy` command globally (if `[project.scripts]` is set).
+This provides a `bang` command globally (if `[project.scripts]` is set).
 
 ---
 
@@ -182,7 +182,7 @@ This provides a `bang-copy` command globally (if `[project.scripts]` is set).
 ### Basic Usage
 
 ```bash
-bang-copy .
+bang .
 ```
 
 Scans the current directory and copies all `!`-prefixed files.
@@ -192,7 +192,7 @@ Scans the current directory and copies all `!`-prefixed files.
 ### With Explicit Folder
 
 ```bash
-bang-copy /path/to/source/folder
+bang /path/to/source/folder
 ```
 
 ---
@@ -200,7 +200,7 @@ bang-copy /path/to/source/folder
 ### Dry Run
 
 ```bash
-bang-copy . --dry-run
+bang . --dry-run
 ```
 
 ---
@@ -208,7 +208,7 @@ bang-copy . --dry-run
 ### Use Last Destinations from Log
 
 ```bash
-bang-copy . --use-last-dests
+bang . --use-last-dests
 ```
 
 ---
@@ -216,7 +216,7 @@ bang-copy . --use-last-dests
 ### Custom Config File
 
 ```bash
-bang-copy . --config ./my_config.json
+bang . --config ./my_config.json
 ```
 
 ---

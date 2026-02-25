@@ -5,8 +5,32 @@ Summary: CLI tool to copy and rename files starting with ! to multiple destinati
 Author-email: Emad Armoun <emad.armoun@email.com>
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
+Requires-Dist: rich>=10.0
+Requires-Dist: pyfiglet>=0.8
 
 # Bang File Copier (CLI Tool)
+
+---
+
+## Overview
+
+**Bang File Copier** is a lightweight command-line tool written in Python that scans a given directory for files whose names start with an exclamation mark (`!`), then copies those files into two predefined destination directories.
+During the copy process, each file is renamed by prefixing it with the source folder’s name.
+
+The tool is designed as a personal automation utility, with a focus on simplicity, portability, and future extensibility (e.g., logging, dry-run, and configurable destinations).
+
+---
+
+## Dependencies
+
+### Required
+* Python 3.7+
+
+### Optional
+* **`rich`** – Pretty console output with tables, panels, and styled text
+* **`pyfiglet`** – ASCII art text rendering (used for the intro banner)
+
+Both optional dependencies serve UI enhancement only. The tool will fall back to plain text output if they are unavailable.
 
 ---
 
@@ -22,26 +46,26 @@ To make the script directly runnable:
 
   chmod +x src/bang_copier.py
 
-### 3. Command Alias
+### 3. Install Optional Dependencies
+To get pretty formatted output:
+
+  pip install rich pyfiglet
+
+Or install with the editable package (if `pyproject.toml` includes them):
+
+  pip install -e .
+
+### 4. Command Alias
 Add a shell alias to your `.bashrc`/`.zshrc`:
 
-  alias bang-copy='python3 /full/path/to/src/bang_copier.py'
+  alias bang='python3 /full/path/to/src/bang_copier.py'
 
-### 4. Install as CLI (optional)
+### 5. Install as CLI (optional)
 With `pyproject.toml` present, install in editable mode:
 
   pip install -e .
 
-This provides a `bang-copy` command globally (if `[project.scripts]` is set).
-
----
-
-## Overview
-
-**Bang File Copier** is a lightweight command-line tool written in Python that scans a given directory for files whose names start with an exclamation mark (`!`), then copies those files into two predefined destination directories.
-During the copy process, each file is renamed by prefixing it with the source folder’s name.
-
-The tool is designed as a personal automation utility, with a focus on simplicity, portability, and future extensibility (e.g., logging, dry-run, and configurable destinations).
+This provides a `bang` command globally (if `[project.scripts]` is set).
 
 ---
 
@@ -168,7 +192,7 @@ The tool is designed as a personal automation utility, with a focus on simplicit
 ### Basic Usage
 
 ```bash
-bang-copy .
+bang .
 ```
 
 Scans the current directory and copies all `!`-prefixed files.
@@ -178,7 +202,7 @@ Scans the current directory and copies all `!`-prefixed files.
 ### With Explicit Folder
 
 ```bash
-bang-copy /path/to/source/folder
+bang /path/to/source/folder
 ```
 
 ---
@@ -186,7 +210,7 @@ bang-copy /path/to/source/folder
 ### Dry Run
 
 ```bash
-bang-copy . --dry-run
+bang . --dry-run
 ```
 
 ---
@@ -194,7 +218,7 @@ bang-copy . --dry-run
 ### Use Last Destinations from Log
 
 ```bash
-bang-copy . --use-last-dests
+bang . --use-last-dests
 ```
 
 ---
@@ -202,7 +226,7 @@ bang-copy . --use-last-dests
 ### Custom Config File
 
 ```bash
-bang-copy . --config ./my_config.json
+bang . --config ./my_config.json
 ```
 
 ---
@@ -260,7 +284,9 @@ bang-copy . --config ./my_config.json
 
 ## Design Philosophy
 
-* Minimal dependencies (standard library only)
+* Minimal core dependencies (standard library by default)
+* Optional enhancements for prettier output (`rich`, `pyfiglet`)
+* Graceful fallback to plain text when optional deps unavailable
 * Human-readable logs
 * Predictable behavior
 * Explicit flags over magic behavior
