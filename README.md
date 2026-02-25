@@ -11,6 +11,19 @@ The tool is designed as a personal automation utility, with a focus on simplicit
 
 ---
 
+## Dependencies
+
+### Required
+* Python 3.7+
+
+### Optional
+* **`rich`** – Pretty console output with tables, panels, and styled text
+* **`pyfiglet`** – ASCII art text rendering (used for the intro banner)
+
+Both optional dependencies serve UI enhancement only. The tool will fall back to plain text output if they are unavailable.
+
+---
+
 ## Packaging & Installation
 
 ### 1. Shebang
@@ -23,12 +36,21 @@ To make the script directly runnable:
 
   chmod +x src/bang_copier.py
 
-### 3. Command Alias
+### 3. Install Optional Dependencies
+To get pretty formatted output:
+
+  pip install rich pyfiglet
+
+Or install with the editable package (if `pyproject.toml` includes them):
+
+  pip install -e .
+
+### 4. Command Alias
 Add a shell alias to your `.bashrc`/`.zshrc`:
 
   alias bang-copy='python3 /full/path/to/src/bang_copier.py'
 
-### 4. Install as CLI (optional)
+### 5. Install as CLI (optional)
 With `pyproject.toml` present, install in editable mode:
 
   pip install -e .
@@ -252,7 +274,9 @@ bang-copy . --config ./my_config.json
 
 ## Design Philosophy
 
-* Minimal dependencies (standard library only)
+* Minimal core dependencies (standard library by default)
+* Optional enhancements for prettier output (`rich`, `pyfiglet`)
+* Graceful fallback to plain text when optional deps unavailable
 * Human-readable logs
 * Predictable behavior
 * Explicit flags over magic behavior
