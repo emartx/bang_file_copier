@@ -17,4 +17,4 @@ dependencies = [
 ]
 
 [project.scripts]
-bang = "bang_copier:main"
+bang = "bang_file_copier:main"
