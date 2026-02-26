@@ -46,10 +46,16 @@ Or install with the editable package (if `pyproject.toml` includes them):
   pip install -e .
 
 ### 4. Command Alias
-Add a shell alias to your `.bashrc`/`.zshrc`:
+Add a shell alias to your `.bashrc`/`.zshrc` (optional):
 
   alias bang='python3 /full/path/to/src/bang_copier.py'
 
+You can also run the package directly with the interpreter:
+
+```bash
+python -m bang_file_copier [path] [--dry-run]
+```
+This behaves identically to the installed ``bang`` command.
 ### 5. Install as CLI (optional)
 With `pyproject.toml` present, install in editable mode:
 
