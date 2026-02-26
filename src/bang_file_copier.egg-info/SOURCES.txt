@@ -1,6 +1,12 @@
 README.md
 pyproject.toml
-src/bang_copier.py
+src/bang_file_copier/__init__.py
+src/bang_file_copier/__main__.py
+src/bang_file_copier/cli.py
+src/bang_file_copier/config.py
+src/bang_file_copier/logging_utils.py
+src/bang_file_copier/operations.py
+src/bang_file_copier/ui.py
 src/bang_file_copier.egg-info/PKG-INFO
 src/bang_file_copier.egg-info/SOURCES.txt
 src/bang_file_copier.egg-info/dependency_links.txt

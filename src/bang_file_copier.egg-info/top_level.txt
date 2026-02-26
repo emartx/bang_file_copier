@@ -1,1 +1,1 @@
-bang_copier
+bang_file_copier
