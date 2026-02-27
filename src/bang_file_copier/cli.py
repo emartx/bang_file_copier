@@ -4,7 +4,15 @@ import argparse
 import sys
 from pathlib import Path
 
-from .config import load_config, validate_config, resolve_log_dir
+from .config import (
+    load_config,
+    validate_config,
+    resolve_log_dir,
+    load_or_create_config,
+    add_destination_to_config,
+    remove_destination_from_config,
+    clear_destinations_in_config,
+)
 from .operations import (
     scan_eligible_files,
     compute_rename_map,
@@ -64,6 +72,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Simulate operations without copying or writing logs",
     )
 
+    # Destination management
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--list-dests",
+        action="store_true",
+        help="Show configured destinations and exit",
+    )
+    group.add_argument(
+        "--add-dest",
+        metavar="PATH",
+        help="Add a new destination directory to the config and exit",
+    )
+    group.add_argument(
+        "--remove-dest",
+        metavar="PATH",
+        help="Remove a destination directory from the config and exit",
+    )
+    group.add_argument(
+        "--clear-dests",
+        action="store_true",
+        help="Remove all destinations from the config and exit",
+    )
+
     return parser
 
 
@@ -72,10 +103,9 @@ def parse_args_and_config(argv=None):
     args = parser.parse_args(argv)
     source_path = Path(args.source).expanduser().resolve()
     config_path = Path(args.config).expanduser().resolve()
-    config = load_config(config_path)
-    config = validate_config(config)
-    log_dir = resolve_log_dir(config)
-    return args, source_path, config, log_dir
+
+    # Defer loading/validation of config to main; return paths for decision-making
+    return args, source_path, config_path
 
 
 def print_config_and_args(source_path, args, config, log_dir):
@@ -213,10 +243,78 @@ def print_summary(plan, matched_files, copies_performed, skips, errors, log_path
 
 def main(argv: list[str] | None = None) -> int:
     print_intro()
-    args, source_path, config, log_dir = parse_args_and_config(argv)
+    args, source_path, config_path = parse_args_and_config(argv)
     if not source_path.exists() or not source_path.is_dir():
         print(f"ERROR: Source folder does not exist or is not a directory: {source_path}", file=sys.stderr)
         sys.exit(2)
+    # Handle destination management flags first
+    if getattr(args, "list_dests", False) or getattr(args, "add_dest", None) or getattr(
+        args, "remove_dest", None
+    ) or getattr(args, "clear_dests", False):
+        cfg = load_or_create_config(config_path)
+
+        # List
+        if getattr(args, "list_dests", False):
+            if not _HAS_RICH:
+                print("Configured destinations:")
+                for d in cfg.get("destinations", []):
+                    print(f"  - {Path(d).expanduser().resolve()}")
+            else:
+                console = Console()
+                table = Table(show_header=False, expand=True, box=box.SIMPLE)
+                table.add_column(justify="right", style="cyan", no_wrap=True, ratio=1)
+                table.add_column(ratio=4)
+                table.add_row("Destinations", "")
+                for d in cfg.get("destinations", []):
+                    table.add_row("", str(Path(d).expanduser().resolve()))
+                console.print(Panel(table, title="Configured Destinations"))
+            return 0
+
+        # Add
+        if getattr(args, "add_dest", None):
+            add_destination_to_config(config_path, args.add_dest)
+            if not _HAS_RICH:
+                print(f"Added destination: {Path(args.add_dest).expanduser().resolve()}")
+            else:
+                console = Console()
+                console.print(Panel(f"Added destination: {Path(args.add_dest).expanduser().resolve()}", style="green"))
+            return 0
+
+        # Remove
+        if getattr(args, "remove_dest", None):
+            before = load_or_create_config(config_path).get("destinations", [])
+            remove_destination_from_config(config_path, args.remove_dest)
+            after = load_or_create_config(config_path).get("destinations", [])
+            removed = len(before) != len(after)
+            if not _HAS_RICH:
+                if removed:
+                    print(f"Removed destination: {Path(args.remove_dest).expanduser().resolve()}")
+                else:
+                    print(f"Destination not found: {Path(args.remove_dest).expanduser().resolve()}")
+            else:
+                console = Console()
+                msg = (
+                    f"Removed destination: {Path(args.remove_dest).expanduser().resolve()}"
+                    if removed
+                    else f"Destination not found: {Path(args.remove_dest).expanduser().resolve()}"
+                )
+                console.print(Panel(msg, style="green" if removed else "yellow"))
+            return 0
+
+        # Clear
+        if getattr(args, "clear_dests", False):
+            clear_destinations_in_config(config_path)
+            if not _HAS_RICH:
+                print("All destinations removed from config")
+            else:
+                console = Console()
+                console.print(Panel("All destinations removed from config", style="yellow"))
+            return 0
+
+    # Normal run: load config and validate
+    config = load_config(config_path)
+    config = validate_config(config)
+    log_dir = resolve_log_dir(config)
     print_config_and_args(source_path, args, config, log_dir)
     matched_files = scan_eligible_files(source_path)
     if not matched_files:
