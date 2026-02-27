@@ -299,6 +299,30 @@ def print_clear_destinations():
         console.print(Panel("All destinations removed from config", style="yellow"))
 
 
+def print_dry_run_plan(plan):
+    """Display the dry-run plan without executing it."""
+    if not _HAS_RICH:
+        print("\nDry-run plan (no files will be copied):")
+        for p in plan:
+            if p["action"] == "COPY":
+                print(f"WOULD COPY: {p['src']} -> {p['dest_path']}")
+            else:
+                print(f"WOULD SKIP (exists): {p['dest_path']}")
+    else:
+        console = Console()
+        table = Table(show_header=True, header_style="bold magenta", box=box.SIMPLE)
+        table.add_column("Source", style="cyan")
+        table.add_column("Destination", style="cyan")
+        table.add_column("Action", style="yellow")
+        
+        for p in plan:
+            action = p["action"]
+            action_display = "[green]WOULD COPY[/green]" if action == "COPY" else "[yellow]WOULD SKIP[/yellow]"
+            table.add_row(p['src'].name, str(p['dest_path']), action_display)
+        
+        console.print(Panel(table, title="Dry-run Plan (no files will be copied)"))
+
+
 def main(argv: list[str] | None = None) -> int:
     print_intro()
     args, source_path, config_path = parse_args_and_config(argv)
@@ -355,26 +379,7 @@ def main(argv: list[str] | None = None) -> int:
     print_matches_and_renames(matched_files, rename_map)
     plan = plan_operations(rename_map, config["destinations"])
     if args.dry_run:
-        if _HAS_RICH:
-            console = Console()
-            table = Table(show_header=True, header_style="bold magenta", box=box.SIMPLE)
-            table.add_column("Source", style="cyan")
-            table.add_column("Destination", style="cyan")
-            table.add_column("Action", style="yellow")
-            
-            for p in plan:
-                action = p["action"]
-                action_display = "[green]WOULD COPY[/green]" if action == "COPY" else "[yellow]WOULD SKIP[/yellow]"
-                table.add_row(p['src'].name, str(p['dest_path']), action_display)
-            
-            console.print(Panel(table, title="Dry-run Plan (no files will be copied)"))
-        else:
-            print("\nDry-run plan (no files will be copied):")
-            for p in plan:
-                if p["action"] == "COPY":
-                    print(f"WOULD COPY: {p['src']} -> {p['dest_path']}")
-                else:
-                    print(f"WOULD SKIP (exists): {p['dest_path']}")
+        print_dry_run_plan(plan)
         print_summary(plan, matched_files, 0, 0, 0, dry_run=True)
         return 0  # Dry-run is always success
     if _HAS_RICH:
