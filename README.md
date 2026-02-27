@@ -227,6 +227,21 @@ bang . --config ./my_config.json
 
 ---
 
+### Manage Destinations
+
+The following options allow you to inspect or mutate the list of configured destinations without performing a copy run:
+
+```bash
+bang --list-dests                 # display current destinations
+bang --add-dest /path/to/dir      # append a destination
+bang --remove-dest /path/to/dir   # remove a specific destination
+bang --clear-dests                # delete all destinations
+```
+
+(These flags are mutually exclusive and exit immediately after performing the action.)
+
+---
+
 ## Configuration File (Example: config.json)
 
 ```json
