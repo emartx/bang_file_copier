@@ -42,8 +42,12 @@ def print_intro():
 def build_parser() -> argparse.ArgumentParser:
     epilog = (
         "Examples:\n"
-        "  bang <folder>              # scan given folder\n"
-        "  bang --dry-run             # show what would happen\n"
+        "  bang <folder>                    # scan given folder\n"
+        "  bang --dry-run                   # show what would happen\n"
+        "  bang --list-dests                # show configured destinations\n"
+        "  bang --add-dest /path/to/dir     # add a new destination\n"
+        "  bang --remove-dest /path/to/dir  # remove a destination\n"
+        "  bang --clear-dests               # remove all destinations\n"
     )
 
     parser = argparse.ArgumentParser(
