@@ -1,4 +1,5 @@
 from __future__ import annotations
+from pathlib import Path
 
 # Optional pretty output dependencies.  Any failure means we fall back to plain text.
 try:
