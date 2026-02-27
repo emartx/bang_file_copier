@@ -245,6 +245,60 @@ def print_summary(plan, matched_files, copies_performed, skips, errors, log_path
     console.print(Panel(table, title="Summary"))
 
 
+def print_list_destinations(destinations):
+    """Display all configured destinations."""
+    if not _HAS_RICH:
+        print("Configured destinations:")
+        for d in destinations:
+            print(f"  - {Path(d).expanduser().resolve()}")
+    else:
+        console = Console()
+        table = Table(show_header=False, expand=True, box=box.SIMPLE)
+        table.add_column(justify="right", style="cyan", no_wrap=True, ratio=1)
+        table.add_column(ratio=4)
+        table.add_row("Destinations", "")
+        for d in destinations:
+            table.add_row("", str(Path(d).expanduser().resolve()))
+        console.print(Panel(table, title="Configured Destinations"))
+
+
+def print_add_destination(dest):
+    """Display confirmation of added destination."""
+    resolved = Path(dest).expanduser().resolve()
+    if not _HAS_RICH:
+        print(f"Added destination: {resolved}")
+    else:
+        console = Console()
+        console.print(Panel(f"Added destination: {resolved}", style="green"))
+
+
+def print_remove_destination(dest, was_removed):
+    """Display result of destination removal attempt."""
+    resolved = Path(dest).expanduser().resolve()
+    if not _HAS_RICH:
+        if was_removed:
+            print(f"Removed destination: {resolved}")
+        else:
+            print(f"Destination not found: {resolved}")
+    else:
+        console = Console()
+        msg = (
+            f"Removed destination: {resolved}"
+            if was_removed
+            else f"Destination not found: {resolved}"
+        )
+        console.print(Panel(msg, style="green" if was_removed else "yellow"))
+
+
+def print_clear_destinations():
+    """Display confirmation of destinations cleared."""
+    if not _HAS_RICH:
+        print("All destinations removed from config")
+    else:
+        console = Console()
+        console.print(Panel("All destinations removed from config", style="yellow"))
+
+
 def main(argv: list[str] | None = None) -> int:
     print_intro()
     args, source_path, config_path = parse_args_and_config(argv)
@@ -259,29 +313,13 @@ def main(argv: list[str] | None = None) -> int:
 
         # List
         if getattr(args, "list_dests", False):
-            if not _HAS_RICH:
-                print("Configured destinations:")
-                for d in cfg.get("destinations", []):
-                    print(f"  - {Path(d).expanduser().resolve()}")
-            else:
-                console = Console()
-                table = Table(show_header=False, expand=True, box=box.SIMPLE)
-                table.add_column(justify="right", style="cyan", no_wrap=True, ratio=1)
-                table.add_column(ratio=4)
-                table.add_row("Destinations", "")
-                for d in cfg.get("destinations", []):
-                    table.add_row("", str(Path(d).expanduser().resolve()))
-                console.print(Panel(table, title="Configured Destinations"))
+            print_list_destinations(cfg.get("destinations", []))
             return 0
 
         # Add
         if getattr(args, "add_dest", None):
             add_destination_to_config(config_path, args.add_dest)
-            if not _HAS_RICH:
-                print(f"Added destination: {Path(args.add_dest).expanduser().resolve()}")
-            else:
-                console = Console()
-                console.print(Panel(f"Added destination: {Path(args.add_dest).expanduser().resolve()}", style="green"))
+            print_add_destination(args.add_dest)
             return 0
 
         # Remove
@@ -290,29 +328,13 @@ def main(argv: list[str] | None = None) -> int:
             remove_destination_from_config(config_path, args.remove_dest)
             after = load_or_create_config(config_path).get("destinations", [])
             removed = len(before) != len(after)
-            if not _HAS_RICH:
-                if removed:
-                    print(f"Removed destination: {Path(args.remove_dest).expanduser().resolve()}")
-                else:
-                    print(f"Destination not found: {Path(args.remove_dest).expanduser().resolve()}")
-            else:
-                console = Console()
-                msg = (
-                    f"Removed destination: {Path(args.remove_dest).expanduser().resolve()}"
-                    if removed
-                    else f"Destination not found: {Path(args.remove_dest).expanduser().resolve()}"
-                )
-                console.print(Panel(msg, style="green" if removed else "yellow"))
+            print_remove_destination(args.remove_dest, removed)
             return 0
 
         # Clear
         if getattr(args, "clear_dests", False):
             clear_destinations_in_config(config_path)
-            if not _HAS_RICH:
-                print("All destinations removed from config")
-            else:
-                console = Console()
-                console.print(Panel("All destinations removed from config", style="yellow"))
+            print_clear_destinations()
             return 0
 
     # Normal run: load config and validate
