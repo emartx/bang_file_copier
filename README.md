@@ -11,6 +11,25 @@ I use this tool for my personal photography workflow. After each shoot, I manual
 
 ---
 
+## Development Method
+
+This project was developed in an iterative AI-assisted workflow:
+
+1. I first explained my project goal to an AI tool.
+2. The AI generated a more complete project explanation.
+3. I reviewed and edited that explanation multiple times until it was ready for `README.md`.
+4. I then asked the AI to generate a step-by-step development plan, which it saved in `produce_steps.md`.
+5. In my free time, I asked the AI to implement each step progressively.
+6. After each implementation step, I reviewed the generated code and edited it when needed.
+7. Finally, I completed the final fixes and refinements, then updated the README sections.
+
+Tools used in this process:
+* VSCode (editing and project work)
+* ChatGPT (project explanation and documentation drafting)
+* Copilot CLI (code generation and implementation support)
+
+---
+
 ## Dependencies
 
 ### Required
