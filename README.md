@@ -161,34 +161,6 @@ python -m bang_file_copier [path] [--dry-run]
 
 ---
 
-### 6. Destination Directories from Log File
-
-#### 6.1 Purpose
-
-* The tool can optionally **reuse previously used destination directories** by reading them from the log file.
-* This allows:
-
-  * Zero-config re-runs
-  * Consistency across sessions
-  * Easy recovery after interruptions
-
-#### 6.2 Behavior
-
-* When invoked with a flag like `--use-last-dests`:
-
-  * The tool:
-
-    1. Reads the log file
-    2. Extracts the last two destination paths used
-    3. Uses them as the active destination directories for the current run
-* If:
-
-  * The log file does not exist
-  * Or fewer than two destinations are found
-    → The tool falls back to config file values or hardcoded defaults.
-
----
-
 ## CLI Interface
 
 ### Basic Usage
@@ -213,14 +185,6 @@ bang /path/to/source/folder
 
 ```bash
 bang . --dry-run
-```
-
----
-
-### Use Last Destinations from Log
-
-```bash
-bang . --use-last-dests
 ```
 
 ---
