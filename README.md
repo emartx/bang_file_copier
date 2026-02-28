@@ -45,42 +45,29 @@ Both optional dependencies serve UI enhancement only. The tool will fall back to
 
 ## Packaging & Installation
 
-### 1. Shebang
-The script already starts with:
+### 1. Install the package
 
-  #!/usr/bin/env python3
+Install in editable mode from the project root:
 
-### 2. Make Executable
-To make the script directly runnable:
+```bash
+pip install -e .
+```
 
-  chmod +x src/bang_copier.py
+This installs the dependencies and exposes the `bang` CLI command from `[project.scripts]`.
 
-### 3. Install Optional Dependencies
-To get pretty formatted output:
+### 2. Run the tool
 
-  pip install rich pyfiglet
+Use the installed CLI:
 
-Or install with the editable package (if `pyproject.toml` includes them):
+```bash
+bang [path] [--dry-run]
+```
 
-  pip install -e .
-
-### 4. Command Alias
-Add a shell alias to your `.bashrc`/`.zshrc` (optional):
-
-  alias bang='python3 /full/path/to/src/bang_copier.py'
-
-You can also run the package directly with the interpreter:
+Or run it as a Python module:
 
 ```bash
 python -m bang_file_copier [path] [--dry-run]
 ```
-This behaves identically to the installed ``bang`` command.
-### 5. Install as CLI (optional)
-With `pyproject.toml` present, install in editable mode:
-
-  pip install -e .
-
-This provides a `bang` command globally (if `[project.scripts]` is set).
 
 ---
 
