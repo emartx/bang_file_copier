@@ -251,24 +251,16 @@ bang --clear-dests                # delete all destinations
 
 ---
 
-## Non-Goals (v1)
+## Future Enhancements
+
+Potential future additions:
 
 * GUI interface
-* Recursive directory scanning
-* File deletion after copy
-* File type filtering
+* Recursive directory scanning (`--recursive`)
+* File deletion after copy (`--delete-after-copy`)
+* File type filtering (`--only-ext .jpg,.png`)
 * Parallel copy
-
-(These can be added later if needed.)
-
----
-
-## Future Enhancements (Optional)
-
-* `--delete-after-copy`
-* `--only-ext .jpg,.png`
-* `--recursive`
-* `--remove-bang`
-* `--json-log`
-* `--stats` summary output
-* `--undo-last-run`
+* Remove bang prefix in output names (`--remove-bang`)
+* JSON log output (`--json-log`)
+* Stats summary output (`--stats`)
+* Undo last run (`--undo-last-run`)
