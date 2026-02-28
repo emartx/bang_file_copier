@@ -4,10 +4,10 @@
 
 ## Overview
 
-**Bang File Copier** is a lightweight command-line tool written in Python that scans a given directory for files whose names start with an exclamation mark (`!`), then copies those files into two predefined destination directories.
+**Bang File Copier** is a lightweight command-line tool written in Python that scans a given directory for files whose names start with an exclamation mark (`!`), then copies those files into one or more predefined destination directories.
 During the copy process, each file is renamed by prefixing it with the source folder’s name.
 
-The tool is designed as a personal automation utility, with a focus on simplicity, portability, and future extensibility (e.g., logging, dry-run, and configurable destinations).
+I use this tool for my personal photography workflow. After each shoot, I manually review the photos and mark the best ones by adding one or more exclamation marks (`!`) at the start of the filename. This tool then automates the next step by finding those marked files and copying them into the folders I use for retouching and publishing.
 
 ---
 
