@@ -263,18 +263,6 @@ bang --clear-dests                # delete all destinations
 
 ---
 
-## Design Philosophy
-
-* Minimal core dependencies (standard library by default)
-* Optional enhancements for prettier output (`rich`, `pyfiglet`)
-* Graceful fallback to plain text when optional deps unavailable
-* Human-readable logs
-* Predictable behavior
-* Explicit flags over magic behavior
-* Safe-by-default (no destructive operations)
-
----
-
 ## Future Enhancements (Optional)
 
 * `--delete-after-copy`
