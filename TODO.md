@@ -1,3 +1,3 @@
 TODO:
+- Add a better screenshot on top of the readme file
 - study why pyenv?
-- Take proper screenshots for the Readme file
