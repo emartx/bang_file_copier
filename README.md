@@ -171,6 +171,12 @@ bang .
 
 Scans the current directory and copies all `!`-prefixed files.
 
+Happy flow screenshots:
+
+![Happy flow step 1](docs/images/happy_flow_1.png)
+![Happy flow step 2](docs/images/happy_flow_2.png)
+![Happy flow step 3](docs/images/happy_flow_3.png)
+
 ---
 
 ### With Explicit Folder
@@ -207,6 +213,22 @@ bang --add-dest /path/to/dir      # append a destination
 bang --remove-dest /path/to/dir   # remove a specific destination
 bang --clear-dests                # delete all destinations
 ```
+
+List destinations:
+
+![List destinations](docs/images/list_dests.png)
+
+Add destination:
+
+![Add destination](docs/images/add_dest.png)
+
+Remove destination:
+
+![Remove destination](docs/images/remove_dest.png)
+
+Clear destinations:
+
+![Clear destinations](docs/images/clear_dests.png)
 
 (These flags are mutually exclusive and exit immediately after performing the action.)
 
