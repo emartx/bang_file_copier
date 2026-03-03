@@ -9,6 +9,8 @@ During the copy process, each file is renamed by prefixing it with the source fo
 
 I use this tool for my personal photography workflow. After each shoot, I manually review the photos and mark the best ones by adding one or more exclamation marks (`!`) at the start of the filename. This tool then automates the next step by finding those marked files and copying them into the folders I use for retouching and publishing.
 
+![Bang Screenshot](docs/images/bang_full_flow.png)
+
 ---
 
 ## Development Method
