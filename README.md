@@ -173,12 +173,6 @@ bang .
 
 Scans the current directory and copies all `!`-prefixed files.
 
-Happy flow screenshots:
-
-![Happy flow step 1](docs/images/happy_flow_1.png)
-![Happy flow step 2](docs/images/happy_flow_2.png)
-![Happy flow step 3](docs/images/happy_flow_3.png)
-
 ---
 
 ### With Explicit Folder
