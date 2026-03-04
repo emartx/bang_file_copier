@@ -47,7 +47,19 @@ Both optional dependencies serve UI enhancement only. The tool will fall back to
 
 ## Packaging & Installation
 
-### 1. Install the package
+### 1. Create an isolated Python environment (recommended)
+
+Using `pyenv` + `venv` keeps your global Python clean and avoids dependency conflicts.
+
+```bash
+pyenv install 3.11.11   # one-time (if not already installed)
+pyenv local 3.11.11
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+### 2. Install the package
 
 Install in editable mode from the project root:
 
@@ -57,7 +69,7 @@ pip install -e .
 
 This installs the dependencies and exposes the `bang` CLI command from `[project.scripts]`.
 
-### 2. Run the tool
+### 3. Run the tool
 
 Use the installed CLI:
 
