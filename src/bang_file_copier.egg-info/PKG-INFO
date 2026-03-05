@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: bang-file-copier
-Version: 0.1.0
+Version: 1.0.0
 Summary: CLI tool to copy and rename files starting with ! to multiple destinations.
 Author-email: Emad Armoun <emad.armoun@email.com>
 Requires-Python: >=3.8
@@ -8,16 +8,39 @@ Description-Content-Type: text/markdown
 Requires-Dist: rich>=10.0
 Requires-Dist: pyfiglet>=0.8
 
+<img alt="Bang Logo" align="left" src="https://github.com/emartx/bang_file_copier/blob/main/docs/logo/Logo.png" width="10%" />
+
 # Bang File Copier (CLI Tool)
 
 ---
 
 ## Overview
 
-**Bang File Copier** is a lightweight command-line tool written in Python that scans a given directory for files whose names start with an exclamation mark (`!`), then copies those files into two predefined destination directories.
+**Bang File Copier** is a lightweight command-line tool written in Python that scans a given directory for files whose names start with an exclamation mark (`!`), then copies those files into one or more predefined destination directories.
 During the copy process, each file is renamed by prefixing it with the source folder’s name.
 
-The tool is designed as a personal automation utility, with a focus on simplicity, portability, and future extensibility (e.g., logging, dry-run, and configurable destinations).
+I use this tool for my personal photography workflow. After each shoot, I manually review the photos and mark the best ones by adding one or more exclamation marks (`!`) at the start of the filename. This tool then automates the next step by finding those marked files and copying them into the folders I use for retouching and publishing.
+
+![Bang Screenshot](docs/images/bang_full_flow.png)
+
+---
+
+## Development Method
+
+This project was developed in an iterative AI-assisted workflow:
+
+1. I first explained my project goal to an AI tool.
+2. The AI generated a more complete project explanation.
+3. I reviewed and edited that explanation multiple times until it was ready for `README.md`.
+4. I then asked the AI to generate a step-by-step development plan, which it saved in `produce_steps.md`.
+5. In my free time, I asked the AI to implement each step progressively.
+6. After each implementation step, I reviewed the generated code and edited it when needed.
+7. Finally, I completed the final fixes and refinements, then updated the README sections.
+
+Tools used in this process:
+* VSCode (editing and project work)
+* ChatGPT (project explanation and documentation drafting)
+* Copilot CLI (code generation and implementation support)
 
 ---
 
@@ -36,42 +59,41 @@ Both optional dependencies serve UI enhancement only. The tool will fall back to
 
 ## Packaging & Installation
 
-### 1. Shebang
-The script already starts with:
+### 1. Create an isolated Python environment (recommended)
 
-  #!/usr/bin/env python3
+Using `pyenv` + `venv` keeps your global Python clean and avoids dependency conflicts.
 
-### 2. Make Executable
-To make the script directly runnable:
+```bash
+pyenv install 3.11.11   # one-time (if not already installed)
+pyenv local 3.11.11
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
 
-  chmod +x src/bang_copier.py
+### 2. Install the package
 
-### 3. Install Optional Dependencies
-To get pretty formatted output:
+Install in editable mode from the project root:
 
-  pip install rich pyfiglet
+```bash
+pip install -e .
+```
 
-Or install with the editable package (if `pyproject.toml` includes them):
+This installs the dependencies and exposes the `bang` CLI command from `[project.scripts]`.
 
-  pip install -e .
+### 3. Run the tool
 
-### 4. Command Alias
-Add a shell alias to your `.bashrc`/`.zshrc` (optional):
+Use the installed CLI:
 
-  alias bang='python3 /full/path/to/src/bang_copier.py'
+```bash
+bang [path] [--dry-run]
+```
 
-You can also run the package directly with the interpreter:
+Or run it as a Python module:
 
 ```bash
 python -m bang_file_copier [path] [--dry-run]
 ```
-This behaves identically to the installed ``bang`` command.
-### 5. Install as CLI (optional)
-With `pyproject.toml` present, install in editable mode:
-
-  pip install -e .
-
-This provides a `bang` command globally (if `[project.scripts]` is set).
 
 ---
 
@@ -165,34 +187,6 @@ This provides a `bang` command globally (if `[project.scripts]` is set).
 
 ---
 
-### 6. Destination Directories from Log File
-
-#### 6.1 Purpose
-
-* The tool can optionally **reuse previously used destination directories** by reading them from the log file.
-* This allows:
-
-  * Zero-config re-runs
-  * Consistency across sessions
-  * Easy recovery after interruptions
-
-#### 6.2 Behavior
-
-* When invoked with a flag like `--use-last-dests`:
-
-  * The tool:
-
-    1. Reads the log file
-    2. Extracts the last two destination paths used
-    3. Uses them as the active destination directories for the current run
-* If:
-
-  * The log file does not exist
-  * Or fewer than two destinations are found
-    → The tool falls back to config file values or hardcoded defaults.
-
----
-
 ## CLI Interface
 
 ### Basic Usage
@@ -221,14 +215,6 @@ bang . --dry-run
 
 ---
 
-### Use Last Destinations from Log
-
-```bash
-bang . --use-last-dests
-```
-
----
-
 ### Custom Config File
 
 ```bash
@@ -247,6 +233,22 @@ bang --add-dest /path/to/dir      # append a destination
 bang --remove-dest /path/to/dir   # remove a specific destination
 bang --clear-dests                # delete all destinations
 ```
+
+List destinations:
+
+![List destinations](docs/images/list_dests.png)
+
+Add destination:
+
+![Add destination](docs/images/add_dest.png)
+
+Remove destination:
+
+![Remove destination](docs/images/remove_dest.png)
+
+Clear destinations:
+
+![Clear destinations](docs/images/clear_dests.png)
 
 (These flags are mutually exclusive and exit immediately after performing the action.)
 
@@ -291,36 +293,16 @@ bang --clear-dests                # delete all destinations
 
 ---
 
-## Non-Goals (v1)
+## Future Enhancements
+
+Potential future additions:
 
 * GUI interface
-* Recursive directory scanning
-* File deletion after copy
-* File type filtering
+* Recursive directory scanning (`--recursive`)
+* File deletion after copy (`--delete-after-copy`)
+* File type filtering (`--only-ext .jpg,.png`)
 * Parallel copy
-
-(These can be added later if needed.)
-
----
-
-## Design Philosophy
-
-* Minimal core dependencies (standard library by default)
-* Optional enhancements for prettier output (`rich`, `pyfiglet`)
-* Graceful fallback to plain text when optional deps unavailable
-* Human-readable logs
-* Predictable behavior
-* Explicit flags over magic behavior
-* Safe-by-default (no destructive operations)
-
----
-
-## Future Enhancements (Optional)
-
-* `--delete-after-copy`
-* `--only-ext .jpg,.png`
-* `--recursive`
-* `--remove-bang`
-* `--json-log`
-* `--stats` summary output
-* `--undo-last-run`
+* Remove bang prefix in output names (`--remove-bang`)
+* JSON log output (`--json-log`)
+* Stats summary output (`--stats`)
+* Undo last run (`--undo-last-run`)
