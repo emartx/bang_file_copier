@@ -16,5 +16,8 @@ dependencies = [
     "pyfiglet>=0.8"
 ]
 
+[project.urls]
+Homepage = "https://github.com/emartx/bang_file_copier"
+
 [project.scripts]
 bang = "bang_file_copier:main"
