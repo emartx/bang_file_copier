@@ -37,7 +37,7 @@ Tools used in this process:
 ## Dependencies
 
 ### Required
-* Python 3.7+
+* Python 3.8+
 
 ### Optional
 * **`rich`** – Pretty console output with tables, panels, and styled text
@@ -61,7 +61,15 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 ```
 
-### 2. Install the package
+### 2. Install from PyPI (recommended for normal use)
+
+```bash
+pip install bang-file-copier
+```
+
+This installs the latest published version and exposes the `bang` CLI command.
+
+### 3. Install from source (development)
 
 Install in editable mode from the project root:
 
@@ -71,7 +79,7 @@ pip install -e .
 
 This installs the dependencies and exposes the `bang` CLI command from `[project.scripts]`.
 
-### 3. Run the tool
+### 4. Run the tool
 
 Use the installed CLI:
 
