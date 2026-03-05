@@ -1,4 +1,4 @@
-<img alt="Bang Logo" align="left" src="https://github.com/emartx/bang_file_copier/blob/main/docs/logo/Logo.png" width="10%" />
+<img alt="Bang Logo" align="left" src="https://github.com/emartx/bang_file_copier/raw/main/docs/logo/Logo.png" width="10%" />
 
 # Bang File Copier (CLI Tool)
 
